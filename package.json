@@ -1,0 +1,31 @@
+{
+  "name": "bot-torioux",
+  "version": "1.0.0",
+  "description": "Un bot para recomendaciones del marketplace",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hendrixroa/bot-torioux.git"
+  },
+  "keywords": [
+    "bot",
+    "chat",
+    "marketplace",
+    "recommend"
+  ],
+  "author": "Hendrix Roa",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hendrixroa/bot-torioux/issues"
+  },
+  "homepage": "https://github.com/hendrixroa/bot-torioux#readme",
+  "dependencies": {
+    "@slack/client": "^4.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^1.17.2"
+  }
+}
