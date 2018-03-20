@@ -1,20 +1,28 @@
 let env = require('node-env-file');
 env(__dirname + '/.env');
 
+const usage_tip = () => {
+  console.log('~~~~~~~~~~')
+  console.log('Botkit Starter Kit')
+  console.log('clientId=<MY SLACK CLIENT ID> clientSecret=<MY CLIENT SECRET> PORT=3000 studio_token=<MY BOTKIT STUDIO TOKEN> node bot.js')
+  console.log('Get a Botkit Studio token here: https://studio.botkit.ai/')
+  console.log('~~~~~~~~~~')
+}
+
 if (!process.env.clientId || !process.env.clientSecret || !process.env.PORT) {
-  usage_tip();
+  usage_tip()
   // process.exit(1);
 }
 
-let Botkit = require('botkit');
-let debug = require('debug')('botkit:main');
+let Botkit = require('botkit')
+let debug = require('debug')('botkit:main')
 
 let bot_options = {
-  clientId: process.env.clientId,
-  clientSecret: process.env.clientSecret,
-  // debug: true,
+  clientId: process.env.clientId || env.variables.clientId,
+  clientSecret: process.env.clientSecret || env.variables.clientSecret,
+  debug: true,
   scopes: ['bot'],
-  studio_token: process.env.studio_token,
+  studio_token: process.env.studio_token || env.variables.studio_token,
   studio_command_uri: process.env.studio_command_uri
 }
 
@@ -37,9 +45,6 @@ let webserver = require(__dirname + '/components/express_webserver.js')(controll
 
 if (!process.env.clientId || !process.env.clientSecret) {
 
-  // Load in some helpers that make running Botkit on Glitch.com better
-  require(__dirname + '/components/plugin_glitch.js')(controller)
-
   webserver.get('/', (req, res) => {
     res.render('installation', {
       studio_enabled: controller.config.studio_token ? true : false,
@@ -49,9 +54,6 @@ if (!process.env.clientId || !process.env.clientSecret) {
       layout: 'layouts/default'
     })
   })
-
-  let where_its_at = 'https://' + process.env.PROJECT_DOMAIN + '.glitch.me/'
-  console.log('WARNING: This application is not fully configured to work with Slack. Please see instructions at ' + where_its_at)
 }else {
 
   webserver.get('/', (req, res) => {
@@ -69,9 +71,6 @@ if (!process.env.clientId || !process.env.clientSecret) {
   // Send an onboarding message when a new team joins
   require(__dirname + '/components/onboarding.js')(controller)
 
-  // Load in some helpers that make running Botkit on Glitch.com better
-  require(__dirname + '/components/plugin_glitch.js')(controller)
-
   // enable advanced botkit studio metric
   require('botkit-studio-metrics')(controller)
 
@@ -87,37 +86,30 @@ if (!process.env.clientId || !process.env.clientSecret) {
   // You can tie into the execution of the script using the functions
   // controller.studio.before, controller.studio.after and controller.studio.validate
   if (process.env.studio_token) {
-    controller.on('direct_message,direct_mention,mention', (bot, message) => {
-      controller.studio.runTrigger(bot, message.text, message.user, message.channel, message).then( (convo) => {
-        if (!convo) {
-          // no trigger was matched
-          // If you want your bot to respond to every message,
-          // define a 'fallback' script in Botkit Studio
-          // and uncomment the line below.
-          // controller.studio.run(bot, 'fallback', message.user, message.channel);
-        } else {
-          // set variables here that are needed for EVERY script
-          // use controller.studio.before('script') to set variables specific to a script
-          convo.setVar('current_time', new Date())
-        }
-      }).catch((err) => {
+    controller.on('direct_message,direct_mention,mention', async (bot, message) => {
+      let [err, convo] = await controller.studio.runTrigger(bot, message.text, message.user, message.channel, message)
+      console.log(bot, message, err, convo)
+      if (!convo) {
+        
+        // no trigger was matched
+        // If you want your bot to respond to every message,
+        // define a 'fallback' script in Botkit Studio
+        // and uncomment the line below.
+        // controller.studio.run(bot, 'fallback', message.user, message.channel);
+      } else {
+        // set variables here that are needed for EVERY script
+        // use controller.studio.before('script') to set variables specific to a script
+        convo.setVar('current_time', new Date())
+      }
+      
+      if(err){
         bot.reply(message, 'I experienced an error with a request to Botkit Studio: ' + err)
         debug('Botkit Studio: ', err)
-      })
+      }else {
+        console.log('~~~~~~~~~~')
+        console.log('NOTE: Botkit Studio functionality has not been enabled')
+        console.log('To enable, pass in a studio_token parameter with a token from https://studio.botkit.ai/')
+      }
     })
-  } else {
-    console.log('~~~~~~~~~~')
-    console.log('NOTE: Botkit Studio functionality has not been enabled')
-    console.log('To enable, pass in a studio_token parameter with a token from https://studio.botkit.ai/')
   }
-}
-
-const usage_tip = () => {
-  console.log('~~~~~~~~~~')
-  console.log('Botkit Starter Kit')
-  console.log('Execute your bot application like this:')
-  console.log('clientId=<MY SLACK CLIENT ID> clientSecret=<MY CLIENT SECRET> PORT=3000 studio_token=<MY BOTKIT STUDIO TOKEN> node bot.js')
-  console.log('Get Slack app credentials here: https://api.slack.com/apps')
-  console.log('Get a Botkit Studio token here: https://studio.botkit.ai/')
-  console.log('~~~~~~~~~~')
 }
